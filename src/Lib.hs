@@ -26,12 +26,18 @@ class (IsTable table, IsColumn column) => HasColumn table column
 data Users = Users deriving Show
 data Name = Name deriving Show
 data Email = Email deriving Show
-
 instance IsTable Users
 instance IsColumn Name
 instance IsColumn Email
 instance HasColumn Users Name
 instance HasColumn Users Email
+
+
+data Comments = Comments deriving Show
+data Author = Author deriving Show
+instance IsTable Comments
+instance IsColumn Author
+instance HasColumn Comments Author
 
 
 data ColumnGroup where
