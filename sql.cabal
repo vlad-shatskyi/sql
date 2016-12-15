@@ -21,6 +21,7 @@ library
   default-extensions:  MultiParamTypeClasses
                      , GADTs
                      , RankNTypes
+                     , FlexibleInstances
 
 executable sql-exe
   hs-source-dirs:      app
