@@ -34,9 +34,9 @@ instance HasColumn Users Name
 instance HasColumn Users Email
 
 
-data C2 a b where
-  C2 :: (IsColumn a, IsColumn b) => a -> b -> C2 a b
+data ColumnGroup a b where
+  C2 :: (IsColumn a, IsColumn b) => a -> b -> ColumnGroup a b
 
 
 data SELECT columns table where
-  SELECT :: (IsTable table, HasColumn table column1, HasColumn table column2) => C2 column1 column2 -> table -> SELECT (C2 column1 column2) table
+  SELECT :: (IsTable table, HasColumn table column1, HasColumn table column2) => ColumnGroup column1 column2 -> table -> SELECT (ColumnGroup column1 column2) table
