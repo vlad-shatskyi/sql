@@ -6,7 +6,7 @@ import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Char (toLower)
 import Data.Proxy (Proxy(Proxy))
-import Data.Type.List (Map)
+import Data.Type.List (Difference)
 
 someFunc :: IO ()
 someFunc = putStrLn "bar"
@@ -28,7 +28,7 @@ data Comments = Comments deriving Show
 data Author = Author deriving Show
 
 
-type AllColumnsExist (passed :: [t]) (onTable :: [t]) = '[True, True] ~ '[True, True]
+type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
 select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
@@ -36,12 +36,7 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> ToProxy (ToList columns)
 select = undefined
 
-
 mySelect = select (Name, Email) Users
-
-
-
-
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = False
@@ -55,11 +50,12 @@ type family Unite a b where
   Unite (Proxy a) (Proxy b) = Proxy '[a, b]
 
 type family GetColumns table where
-  GetColumns Users = '[Name, Email]
+  GetColumns Users = '[Name, Email, Author]
   GetColumns Comments = '[Author]
 
 type family ToList tuple where
   ToList (a, b) = '[a, b]
+  ToList (a, b, c) = '[a, b, c]
 
 type family ToProxy a where
   ToProxy a = Proxy a
