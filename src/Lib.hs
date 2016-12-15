@@ -9,7 +9,7 @@ import Data.Proxy (Proxy(Proxy))
 import Data.Type.List (Difference)
 
 someFunc :: IO ()
-someFunc = putStrLn "bar"
+someFunc = putStrLn $ serialize mySelect
 -- someFunc = putStrLn $ serialize $ select (Name, Email) Users
 
 -- serialize :: SELECT columns table -> String
@@ -27,16 +27,31 @@ data Email = Email deriving Show
 data Comments = Comments deriving Show
 data Author = Author deriving Show
 
+class ToValue a where
+  toValue :: Proxy a -> [String]
+
+instance ToValue Name where
+  toValue = const ["name"]
+
+instance ToValue Email where
+  toValue = const ["email"]
+
+-- instance (ToValue v1, ToValue v2) => ToValue (v1, v2) where
+instance ToValue ((,) Name Email) where
+  toValue = const $ toValue (Proxy :: Proxy Name) ++ toValue (Proxy :: Proxy Email)
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
 select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> table
-       -> ToProxy (ToList columns)
+       -> ToProxy columns
 select _ _ = Proxy
 
 mySelect = select (Name, Email) Users
+
+serialize :: forall n proxy. ToValue n => Proxy n -> String
+serialize = intercalate ", " . toValue
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = False
