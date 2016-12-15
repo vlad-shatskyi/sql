@@ -39,7 +39,7 @@ instance ToValue Name where
 instance ToValue Email where
   toValue = const "email"
 
-instance (ToValue v1, ToValue v2) => ToValues ((,) v1 v2) where
+instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = const [toValue (Proxy :: Proxy Name), toValue (Proxy :: Proxy Email)]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
