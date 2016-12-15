@@ -9,7 +9,7 @@ import Data.Char (toLower)
 someFunc :: IO ()
 someFunc = putStrLn $ select [Name] Users
 
-select :: (Column column, Table table, HasColumn table column) => [column] -> table -> String
+select :: (IsColumn column, IsTable table, HasColumn table column) => [column] -> table -> String
 select columns table = sql
   where sql = [ "SELECT " ++ columnsSQL
               , "FROM " ++ tableName
@@ -18,13 +18,13 @@ select columns table = sql
         columnName = map toLower . show
         tableName  = map toLower $ show table
 
-class Show a => Table a
-class Show a => Column a
-class (Table table, Column column) => HasColumn table column
+class Show a => IsTable a
+class Show a => IsColumn a
+class (IsTable table, IsColumn column) => HasColumn table column
 
 data Users = Users deriving Show
 data Name = Name deriving Show
 
-instance Table Users
-instance Column Name
+instance IsTable Users
+instance IsColumn Name
 instance HasColumn Users Name
