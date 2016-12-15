@@ -5,56 +5,64 @@ module Lib
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Char (toLower)
+import Data.Proxy (Proxy(Proxy))
+import Data.Type.List (Map)
 
 someFunc :: IO ()
-someFunc = putStrLn $ serialize $ select (Name, Email) Users
+someFunc = putStrLn "bar"
+-- someFunc = putStrLn $ serialize $ select (Name, Email) Users
 
-serialize :: SELECT columns table -> String
-serialize (SELECT group table) = sql
-  where sql = [ "SELECT " ++ columnsSQL
-              , "FROM " ++ tableName
-              ] & intercalate "\n"
-        columnsSQL = intercalate ", " (map (map toLower) (showColumnGroup group))
-        tableName  = map toLower $ show table
-
-select columns = SELECT (toColumnGroup columns)
-
-class Show a => IsTable a
-class Show a => IsColumn a
-class (IsTable table, IsColumn column) => HasColumn table column
+-- serialize :: SELECT columns table -> String
+-- serialize (SELECT group table) = sql
+--   where sql = [ "SELECT " ++ columnsSQL
+--               , "FROM " ++ tableName
+--               ] & intercalate "\n"
+--         columnsSQL = intercalate ", " (map (map toLower) (showColumnGroup group))
+--         tableName  = map toLower $ show table
 
 data Users = Users deriving Show
 data Name = Name deriving Show
 data Email = Email deriving Show
-instance IsTable Users
-instance IsColumn Name
-instance IsColumn Email
-instance HasColumn Users Name
-instance HasColumn Users Email
-
 
 data Comments = Comments deriving Show
 data Author = Author deriving Show
-instance IsTable Comments
-instance IsColumn Author
-instance HasColumn Comments Author
 
 
-data ColumnGroup where
-  C1 :: forall a. IsColumn a => a -> ColumnGroup
-  C2 :: forall a b. (IsColumn a, IsColumn b) => a -> b -> ColumnGroup
+type AllColumnsExist (passed :: [t]) (onTable :: [t]) = '[True, True] ~ '[True, True]
 
-showColumnGroup :: ColumnGroup -> [String]
-showColumnGroup x = case x of
-  C1 a -> [show a]
-  C2 a b -> [show a, show b]
+select :: AllColumnsExist (ToList columns) (GetColumns table)
+       => columns
+       -> table
+       -> ToProxy (ToList columns)
+select = undefined
 
 
-class ToColumnGroup a where
-  toColumnGroup :: a -> ColumnGroup
+mySelect = select (Name, Email) Users
 
-instance (IsColumn a, IsColumn b) => ToColumnGroup (a, b) where
-  toColumnGroup (a, b) = C2 a b
 
-data SELECT columns table where
-  SELECT :: (IsTable table) => ColumnGroup -> table -> SELECT ColumnGroup table
+
+
+
+type family IsElementOf (x :: k) (xs :: [k]) where
+  IsElementOf x '[] = False
+  IsElementOf x (x ': xs) = True
+  IsElementOf x (y ': ys) = IsElementOf x ys
+
+type family Insert a xs where
+  Insert a '[] = (a ': '[])
+
+type family Unite a b where
+  Unite (Proxy a) (Proxy b) = Proxy '[a, b]
+
+type family GetColumns table where
+  GetColumns Users = '[Name, Email]
+  GetColumns Comments = '[Author]
+
+type family ToList tuple where
+  ToList (a, b) = '[a, b]
+
+type family ToProxy a where
+  ToProxy a = Proxy a
+
+type family Head x where
+  Head (x ': xs) = x
