@@ -7,14 +7,14 @@ import Data.Function ((&))
 import Data.Char (toLower)
 
 someFunc :: IO ()
-someFunc = putStrLn $ serialize $ select (C2 Name Email) Users
+someFunc = putStrLn $ serialize $ select (C1 Name) Users
 
 serialize :: SELECT columns table -> String
-serialize (SELECT (C2 first second') table) = sql
+serialize (SELECT group table) = sql
   where sql = [ "SELECT " ++ columnsSQL
               , "FROM " ++ tableName
               ] & intercalate "\n"
-        columnsSQL = intercalate ", " [map toLower (show first), map toLower (show second')]
+        columnsSQL = intercalate ", " (map (map toLower) (showColumnGroup group))
         tableName  = map toLower $ show table
 
 select = SELECT
@@ -34,9 +34,13 @@ instance HasColumn Users Name
 instance HasColumn Users Email
 
 
-data ColumnGroup a b where
-  C2 :: (IsColumn a, IsColumn b) => a -> b -> ColumnGroup a b
+data ColumnGroup where
+  C1 :: forall a. IsColumn a => a -> ColumnGroup
+
+showColumnGroup :: ColumnGroup -> [String]
+showColumnGroup = \x -> case x of
+  C1 a -> [show a]
 
 
 data SELECT columns table where
-  SELECT :: (IsTable table, HasColumn table column1, HasColumn table column2) => ColumnGroup column1 column2 -> table -> SELECT (ColumnGroup column1 column2) table
+  SELECT :: (IsTable table) => ColumnGroup -> table -> SELECT ColumnGroup table
