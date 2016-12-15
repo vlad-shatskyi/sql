@@ -20,25 +20,27 @@ someFunc = putStrLn $ serialize mySelect
 --         columnsSQL = intercalate ", " (map (map toLower) (showColumnGroup group))
 --         tableName  = map toLower $ show table
 
-data Users = Users deriving Show
-data Name = Name deriving Show
-data Email = Email deriving Show
+data Users = Users
+data Name = Name
+data Email = Email
 
 data Comments = Comments deriving Show
 data Author = Author deriving Show
 
+class ToValue a where
+  toValue :: Proxy a -> String
+
 class ToValues a where
   toValues :: Proxy a -> [String]
 
-instance ToValues Name where
-  toValues = const ["name"]
+instance ToValue Name where
+  toValue = const "name"
 
-instance ToValues Email where
-  toValues = const ["email"]
+instance ToValue Email where
+  toValue = const "email"
 
--- instance (ToValue v1, ToValue v2) => ToValue (v1, v2) where
-instance ToValues ((,) Name Email) where
-  toValues = const $ toValues (Proxy :: Proxy Name) ++ toValues (Proxy :: Proxy Email)
+instance (ToValue v1, ToValue v2) => ToValues ((,) v1 v2) where
+  toValues = const [toValue (Proxy :: Proxy Name), toValue (Proxy :: Proxy Email)]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
