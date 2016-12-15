@@ -34,7 +34,7 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> table
        -> ToProxy (ToList columns)
-select = undefined
+select _ _ = Proxy
 
 mySelect = select (Name, Email) Users
 
