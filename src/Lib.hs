@@ -9,7 +9,7 @@ import Data.Char (toLower)
 someFunc :: IO ()
 someFunc = putStrLn $ select [Name] Users
 
-select :: (Column column, Table table) => [column] -> table -> String
+select :: (Column column, Table table, HasColumn table column) => [column] -> table -> String
 select columns table = sql
   where sql = [ "SELECT " ++ columnsSQL
               , "FROM " ++ tableName
@@ -20,9 +20,11 @@ select columns table = sql
 
 class Show a => Table a
 class Show a => Column a
+class (Table table, Column column) => HasColumn table column
 
 data Users = Users deriving Show
 data Name = Name deriving Show
 
 instance Table Users
 instance Column Name
+instance HasColumn Users Name
