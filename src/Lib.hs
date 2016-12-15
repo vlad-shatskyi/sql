@@ -7,7 +7,7 @@ import Data.Function ((&))
 import Data.Char (toLower)
 
 someFunc :: IO ()
-someFunc = putStrLn $ serialize $ select (C1 Name) Users
+someFunc = putStrLn $ serialize $ select (C2 Name Email) Users
 
 serialize :: SELECT columns table -> String
 serialize (SELECT group table) = sql
@@ -36,10 +36,12 @@ instance HasColumn Users Email
 
 data ColumnGroup where
   C1 :: forall a. IsColumn a => a -> ColumnGroup
+  C2 :: forall a b. (IsColumn a, IsColumn b) => a -> b -> ColumnGroup
 
 showColumnGroup :: ColumnGroup -> [String]
-showColumnGroup = \x -> case x of
+showColumnGroup x = case x of
   C1 a -> [show a]
+  C2 a b -> [show a, show b]
 
 
 data SELECT columns table where
