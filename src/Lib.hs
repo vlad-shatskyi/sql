@@ -10,15 +10,6 @@ import Data.Type.List (Difference)
 
 someFunc :: IO ()
 someFunc = putStrLn $ serialize mySelect
--- someFunc = putStrLn $ serialize $ select (Name, Email) Users
-
--- serialize :: SELECT columns table -> String
--- serialize (SELECT group table) = sql
---   where sql = [ "SELECT " ++ columnsSQL
---               , "FROM " ++ tableName
---               ] & intercalate "\n"
---         columnsSQL = intercalate ", " (map (map toLower) (showColumnGroup group))
---         tableName  = map toLower $ show table
 
 data Users = Users
 data Name = Name
@@ -29,6 +20,9 @@ data Author = Author deriving Show
 
 class ToValue a where
   toValue :: String
+
+instance ToValue Users where
+  toValue = "users"
 
 instance ToValue Name where
   toValue = "name"
@@ -51,17 +45,17 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> FROM
        -> table
-       -> ToProxy columns
+       -> ToProxy (table, columns)
 select _ _ _ = Proxy
 
 mySelect = select (Name, Email) from Users
 
-serialize :: forall columns table. ToValues columns => Proxy columns -> String
-serialize _ = intercalate ", " (toValues @columns)
+serialize :: forall columns table. (ToValues columns, ToValue table) => Proxy (table, columns) -> String
+serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
 
 type family IsElementOf (x :: k) (xs :: [k]) where
-  IsElementOf x '[] = False
-  IsElementOf x (x ': xs) = True
+  IsElementOf x '[] = 'False
+  IsElementOf x (x ': xs) = 'True
   IsElementOf x (y ': ys) = IsElementOf x ys
 
 type family Insert a xs where
