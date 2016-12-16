@@ -8,31 +8,9 @@ import Data.Char (toLower)
 import Data.Proxy (Proxy(Proxy))
 import Data.Type.List (Difference)
 
-someFunc :: IO ()
-someFunc = putStrLn $ serialize mySelect
-
-data Users = Users
-data Name = Name
-data Email = Email
-
-data Comments = Comments deriving Show
-data Author = Author deriving Show
-
-class ToValue a where
-  toValue :: String
-
-instance ToValue Users where
-  toValue = "users"
-
-instance ToValue Name where
-  toValue = "name"
-
-instance ToValue Email where
-  toValue = "email"
-
-instance ToValue Author where
-  toValue = "author"
-
+-- LIBRARY.
+-- TODO:
+------------------------------------------------------------------------------------------------------------------------
 class ToValues a where
   toValues :: [String]
 
@@ -51,8 +29,6 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> ToProxy (table, columns)
 select _ _ _ = Proxy
 
-mySelect = select (Name, Email) from Users
-
 serialize :: forall columns table. (ToValues columns, ToValue table) => Proxy (table, columns) -> String
 serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
 
@@ -66,10 +42,6 @@ type family Insert a xs where
 
 type family Unite a b where
   Unite (Proxy a) (Proxy b) = Proxy '[a, b]
-
-type family GetColumns table where
-  GetColumns Users = '[Name, Email]
-  GetColumns Comments = '[Author]
 
 type family ToList tuple where
   ToList (v1, v2) = '[v1, v2]
@@ -94,3 +66,57 @@ type family ToProxy a where
 
 type family Head x where
   Head (x ': xs) = x
+------------------------------------------------------------------------------------------------------------------------
+-- END OF LIB.
+
+
+-- DEFINITIONS.
+------------------------------------------------------------------------------------------------------------------------
+
+-- tables
+data Users = Users
+data Comments = Comments
+
+-- users columns
+data Name = Name
+data Email = Email
+
+-- comments columns
+data Author = Author deriving Show
+
+
+-- boilerplate
+-- TODO: Generate via TH or find a way to derive from `data` somehow.
+class ToValue a where
+  toValue :: String
+
+instance ToValue Users where
+  toValue = "users"
+
+instance ToValue Name where
+  toValue = "name"
+
+instance ToValue Email where
+  toValue = "email"
+
+instance ToValue Author where
+  toValue = "author"
+
+
+-- TABLE STRUCTURE.
+-- currently only column names.
+------------------------------------------------------------------------------------------------------------------------
+type family GetColumns table where
+  GetColumns Users = '[Name, Email]
+  GetColumns Comments = '[Author]
+
+
+selects =
+  [ select (Name, Email) from Users
+--   , select (Name, Author) from Users -- doesn't compile because there is no Author in Users.
+--   , (select (Name, Email) (select (Name) from Users)) -- doesn't compile because there is no Email in the inner select.
+  ]
+
+
+someFunc :: IO ()
+someFunc = mapM_ (putStrLn . serialize) selects
