@@ -28,19 +28,19 @@ data Comments = Comments deriving Show
 data Author = Author deriving Show
 
 class ToValue a where
-  toValue :: Proxy a -> String
-
-class ToValues a where
-  toValues :: Proxy a -> [String]
+  toValue :: String
 
 instance ToValue Name where
-  toValue = const "name"
+  toValue = "name"
 
 instance ToValue Email where
-  toValue = const "email"
+  toValue = "email"
+
+class ToValues a where
+  toValues :: [String]
 
 instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
-  toValues = const [toValue (Proxy :: Proxy v1), toValue (Proxy :: Proxy v2)]
+  toValues = [toValue @v1, toValue @v2]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
@@ -53,7 +53,7 @@ select _ _ = Proxy
 mySelect = select (Name, Email) Users
 
 serialize :: forall columns table. ToValues columns => Proxy columns -> String
-serialize = intercalate ", " . toValues
+serialize _ = intercalate ", " (toValues @columns)
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = False

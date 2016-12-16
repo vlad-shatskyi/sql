@@ -30,6 +30,8 @@ library
                      , TypeInType
                      , ConstraintKinds
                      , ScopedTypeVariables
+                     , AllowAmbiguousTypes
+                     , TypeApplications
 
 executable sql-exe
   hs-source-dirs:      app
