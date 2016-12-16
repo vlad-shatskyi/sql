@@ -52,7 +52,7 @@ select _ _ = Proxy
 
 mySelect = select (Name, Email) Users
 
-serialize :: forall n proxy. ToValues n => Proxy n -> String
+serialize :: forall columns table. ToValues columns => Proxy columns -> String
 serialize = intercalate ", " . toValues
 
 type family IsElementOf (x :: k) (xs :: [k]) where
