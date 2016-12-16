@@ -29,6 +29,7 @@ library
                      , TypeFamilies
                      , TypeInType
                      , ConstraintKinds
+                     , ScopedTypeVariables
 
 executable sql-exe
   hs-source-dirs:      app
