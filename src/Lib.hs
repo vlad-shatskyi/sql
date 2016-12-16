@@ -18,6 +18,7 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = [toValue @v1, toValue @v2]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
+type SELECT columns table = ToProxy (columns, table)
 
 data FROM = FROM
 from = FROM
@@ -26,10 +27,10 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> FROM
        -> table
-       -> ToProxy (table, columns)
+       -> SELECT columns table
 select _ _ _ = Proxy
 
-serialize :: forall columns table. (ToValues columns, ToValue table) => Proxy (table, columns) -> String
+serialize :: forall columns table. (ToValues columns, ToValue table) => SELECT columns table -> String
 serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
 
 type family IsElementOf (x :: k) (xs :: [k]) where
