@@ -30,6 +30,9 @@ instance ToValue Name where
 instance ToValue Email where
   toValue = "email"
 
+instance ToValue Author where
+  toValue = "author"
+
 class ToValues a where
   toValues :: [String]
 
@@ -65,7 +68,7 @@ type family Unite a b where
   Unite (Proxy a) (Proxy b) = Proxy '[a, b]
 
 type family GetColumns table where
-  GetColumns Users = '[Name, Email, Author]
+  GetColumns Users = '[Name, Email]
   GetColumns Comments = '[Author]
 
 type family ToList tuple where
