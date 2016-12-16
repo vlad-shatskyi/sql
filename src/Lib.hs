@@ -44,13 +44,17 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
+data FROM = FROM
+from = FROM
+
 select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
+       -> FROM
        -> table
        -> ToProxy columns
-select _ _ = Proxy
+select _ _ _ = Proxy
 
-mySelect = select (Name, Email) Users
+mySelect = select (Name, Email) from Users
 
 serialize :: forall columns table. ToValues columns => Proxy columns -> String
 serialize _ = intercalate ", " (toValues @columns)
