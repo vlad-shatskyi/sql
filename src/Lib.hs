@@ -3,18 +3,26 @@ module Lib
     ) where
 
 import Data.List (intercalate)
+import Data.Function ((&))
 import Data.Type.List (Difference)
 
 -- LIBRARY.
--- TODO:
 ------------------------------------------------------------------------------------------------------------------------
 class ToValues a where
   toValues :: [String]
 
+instance ToValues () where
+  toValues = []
+
+instance (ToValue v1) => ToValues (SingleElementTuple v1) where
+  toValues = [toValue @v1]
 instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = [toValue @v1, toValue @v2]
+instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
+  toValues = [toValue @v1, toValue @v2, toValue @v3]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
+
 data SELECT columns table conditions = SELECT
 
 data FROM = FROM
@@ -27,15 +35,28 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> SELECT columns table ()
 select _ _ _ = SELECT
 
-serialize :: forall columns table conditions. (ToValues columns, ToValue table) => SELECT columns table conditions -> String
-serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
+where' :: condition -> SELECT columns table conditions -> SELECT columns table (TuplePrepend condition conditions)
+where' _ _ = SELECT
+
+data Equals
+data Condition a = Condition
+
+eq :: (Int ~ value) => column -> value -> Condition (Equals, column, value)
+eq _ _ = Condition
+
+data SingleElementTuple a
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
   IsElementOf x (x ': xs) = 'True
   IsElementOf x (y ': ys) = IsElementOf x ys
 
+type TuplePrepend x xs = FromList (ListPrepend x (ToList xs))
+
+-- TODO: Use HList.
 type family ToList tuple where
+  ToList () = '[]
+  ToList (SingleElementTuple v1) = '[v1]
   ToList (v1, v2) = '[v1, v2]
   ToList (v1, v2, v3) = '[v1, v2, v3]
   ToList (v1, v2, v3, v4) = '[v1, v2, v3, v4]
@@ -53,8 +74,36 @@ type family ToList tuple where
   ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16]
   ToList v = '[v]
 
+type family FromList list where
+  FromList '[] = ()
+  FromList '[v1] = SingleElementTuple v1
+  FromList '[v1, v2] = (v1, v2)
+  FromList '[v1, v2, v3] = (v1, v2, v3)
+  FromList '[v1, v2, v3, v4] = (v1, v2, v3, v4)
+  FromList '[v1, v2, v3, v4, v5] = (v1, v2, v3, v4, v5)
+  FromList '[v1, v2, v3, v4, v5, v6] = (v1, v2, v3, v4, v5, v6)
+  FromList '[v1, v2, v3, v4, v5, v6, v7] = (v1, v2, v3, v4, v5, v6, v7)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8] = (v1, v2, v3, v4, v5, v6, v7, v8)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9] = (v1, v2, v3, v4, v5, v6, v7, v8, v9)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
+  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16)
+
+type family ListPrepend x xs where
+  ListPrepend x xs = x ': xs
+
 type family Head x where
   Head (x ': xs) = x
+
+serialize :: forall columns table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns table conditions -> String
+serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table ++ conditions
+  where conditions = case toValues @conditions of
+                       [] -> ""
+                       xs -> " WHERE " ++ intercalate " && " xs
 ------------------------------------------------------------------------------------------------------------------------
 -- END OF LIB.
 
@@ -91,8 +140,13 @@ instance ToValue Email where
 instance ToValue Author where
   toValue = "author"
 
+-- TODO: figure out how to have a type level integer here.
+-- TODO: generalize.
+instance ToValue column => ToValue (Condition (Equals, column, number)) where
+  toValue = toValue @column ++ " = " ++ "12"
 
--- TABLE STRUCTURE.
+
+-- SCHEMA
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
 type family GetColumns table where
@@ -101,9 +155,10 @@ type family GetColumns table where
 
 
 selects =
-  [ select (Name, Email) from Users
---   , select (Name, Author) from Users -- doesn't compile because there is no Author in Users.
---   , (select (Name, Email) (select (Name) from Users)) -- doesn't compile because there is no Email in the inner select.
+  [ -- select (Name, Email) from Users -- should compile.
+--   , select (Name, Author) from Users -- should not compile because there is no Author in Users.
+--   , (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
+    select (Name, Email) from Users & where' (Name `eq` 12) & where' (Email `eq` 12)-- should compile.
   ]
 
 
