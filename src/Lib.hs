@@ -15,7 +15,7 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = [toValue @v1, toValue @v2]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
-data SELECT columns table = SELECT
+data SELECT columns table conditions = SELECT
 
 data FROM = FROM
 from = FROM
@@ -24,10 +24,10 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> FROM
        -> table
-       -> SELECT columns table
+       -> SELECT columns table ()
 select _ _ _ = SELECT
 
-serialize :: forall columns table. (ToValues columns, ToValue table) => SELECT columns table -> String
+serialize :: forall columns table conditions. (ToValues columns, ToValue table) => SELECT columns table conditions -> String
 serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
 
 type family IsElementOf (x :: k) (xs :: [k]) where
