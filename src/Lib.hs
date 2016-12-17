@@ -3,9 +3,6 @@ module Lib
     ) where
 
 import Data.List (intercalate)
-import Data.Function ((&))
-import Data.Char (toLower)
-import Data.Proxy (Proxy(Proxy))
 import Data.Type.List (Difference)
 
 -- LIBRARY.
@@ -18,7 +15,7 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = [toValue @v1, toValue @v2]
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
-type SELECT columns table = ToProxy (columns, table)
+data SELECT columns table = SELECT
 
 data FROM = FROM
 from = FROM
@@ -28,7 +25,7 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> FROM
        -> table
        -> SELECT columns table
-select _ _ _ = Proxy
+select _ _ _ = SELECT
 
 serialize :: forall columns table. (ToValues columns, ToValue table) => SELECT columns table -> String
 serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table
@@ -37,12 +34,6 @@ type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
   IsElementOf x (x ': xs) = 'True
   IsElementOf x (y ': ys) = IsElementOf x ys
-
-type family Insert a xs where
-  Insert a '[] = (a ': '[])
-
-type family Unite a b where
-  Unite (Proxy a) (Proxy b) = Proxy '[a, b]
 
 type family ToList tuple where
   ToList (v1, v2) = '[v1, v2]
@@ -61,9 +52,6 @@ type family ToList tuple where
   ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15]
   ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16]
   ToList v = '[v]
-
-type family ToProxy a where
-  ToProxy a = Proxy a
 
 type family Head x where
   Head (x ': xs) = x
