@@ -88,7 +88,7 @@ data Comments = Comments
 
 -- users columns
 data Name = Name
-data Email = Email
+data Age = Age
 
 -- comments columns
 data Author = Author deriving Show
@@ -110,7 +110,7 @@ instance ToValue Users where
   toValue _ = "users"
 instance ToValue Name where
   toValue _ = "name"
-instance ToValue Email where
+instance ToValue Age where
   toValue _ = "email"
 instance ToValue Author where
   toValue _ = "author"
@@ -128,18 +128,19 @@ instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, 
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
 type family GetColumns table where
-  GetColumns Users = '[Name, Email]
+  GetColumns Users = '[Name, Age]
   GetColumns Comments = '[Author]
 
 type family GetColumnType column where
   GetColumnType Name = String
-  GetColumnType Email = String
+  GetColumnType Age = Integer
 
 
--- s = select (Name, Email) from Users -- should compile.
+-- s = select (Name, Age) from Users -- should compile.
 -- s = select (Name, Author) from Users -- should not compile because there is no Author in Users.
--- s = (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
-s =  select (Name, Email) from Users & where' (Name `eq` "john") & where' (Email `eq` "john@mecom")-- should compile.
+-- s = (select (Name, Age) (select (Name) from Users)) -- should not compile because there is no Age in the inner select.
+-- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` "18")-- should not compile because integer column Age is compared with a string.
+s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
 
 
 someFunc :: IO ()
