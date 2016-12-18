@@ -62,25 +62,6 @@ type family ToList tuple where
   ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16]
   ToList v = '[v]
 
-type family FromList list where
-  FromList '[] = ()
-  FromList '[v1] = OneTuple v1
-  FromList '[v1, v2] = (v1, v2)
-  FromList '[v1, v2, v3] = (v1, v2, v3)
-  FromList '[v1, v2, v3, v4] = (v1, v2, v3, v4)
-  FromList '[v1, v2, v3, v4, v5] = (v1, v2, v3, v4, v5)
-  FromList '[v1, v2, v3, v4, v5, v6] = (v1, v2, v3, v4, v5, v6)
-  FromList '[v1, v2, v3, v4, v5, v6, v7] = (v1, v2, v3, v4, v5, v6, v7)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8] = (v1, v2, v3, v4, v5, v6, v7, v8)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9] = (v1, v2, v3, v4, v5, v6, v7, v8, v9)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
-  FromList '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16] = (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16)
-
 type family ListPrepend x xs where
   ListPrepend x xs = x ': xs
 
@@ -150,13 +131,11 @@ type family GetColumns table where
   GetColumns Comments = '[Author]
 
 
-selects =
-  [ -- select (Name, Email) from Users -- should compile.
---   , select (Name, Author) from Users -- should not compile because there is no Author in Users.
---   , (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
-    select (Name, Email) from Users & where' (Name `eq` 42) & where' (Email `eq` 12)-- should compile.
-  ]
+-- s = select (Name, Email) from Users -- should compile.
+-- s = select (Name, Author) from Users -- should not compile because there is no Author in Users.
+-- s = (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
+s =  select (Name, Email) from Users & where' (Name `eq` 42) & where' (Email `eq` 12)-- should compile.
 
 
 someFunc :: IO ()
-someFunc = mapM_ (putStrLn . serialize) selects
+someFunc = (putStrLn . serialize) s
