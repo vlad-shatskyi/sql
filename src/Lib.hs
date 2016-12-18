@@ -5,6 +5,7 @@ module Lib
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
+import Tuples (OneTuple, ConsTuple, consTuple)
 
 -- LIBRARY.
 ------------------------------------------------------------------------------------------------------------------------
@@ -14,7 +15,7 @@ class ToValues a where
 instance ToValues () where
   toValues = []
 
-instance (ToValue v1) => ToValues (SingleElementTuple v1) where
+instance (ToValue v1) => ToValues (OneTuple v1) where
   toValues = [toValue @v1]
 instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues = [toValue @v1, toValue @v2]
@@ -23,28 +24,26 @@ instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
-data SELECT columns table conditions = SELECT
-
+data SELECT columns from table conditions = SELECT columns from table conditions
 data FROM = FROM
+from :: FROM
 from = FROM
 
 select :: AllColumnsExist (ToList columns) (GetColumns table)
        => columns
        -> FROM
        -> table
-       -> SELECT columns table ()
-select _ _ _ = SELECT
+       -> SELECT columns FROM table ()
+select columns from table = SELECT columns from table ()
 
-where' :: condition -> SELECT columns table conditions -> SELECT columns table (TuplePrepend condition conditions)
-where' _ _ = SELECT
+where' :: forall columns from table conditions e es. ConsTuple e es conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
+where' condition (SELECT columns from table conditions) = SELECT columns from table (consTuple condition conditions)
 
 data Equals
 data Condition a = Condition
 
 eq :: (Int ~ value) => column -> value -> Condition (Equals, column, value)
 eq _ _ = Condition
-
-data SingleElementTuple a
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
@@ -56,7 +55,7 @@ type TuplePrepend x xs = FromList (ListPrepend x (ToList xs))
 -- TODO: Use HList.
 type family ToList tuple where
   ToList () = '[]
-  ToList (SingleElementTuple v1) = '[v1]
+  ToList (OneTuple v1) = '[v1]
   ToList (v1, v2) = '[v1, v2]
   ToList (v1, v2, v3) = '[v1, v2, v3]
   ToList (v1, v2, v3, v4) = '[v1, v2, v3, v4]
@@ -76,7 +75,7 @@ type family ToList tuple where
 
 type family FromList list where
   FromList '[] = ()
-  FromList '[v1] = SingleElementTuple v1
+  FromList '[v1] = OneTuple v1
   FromList '[v1, v2] = (v1, v2)
   FromList '[v1, v2, v3] = (v1, v2, v3)
   FromList '[v1, v2, v3, v4] = (v1, v2, v3, v4)
@@ -99,7 +98,7 @@ type family ListPrepend x xs where
 type family Head x where
   Head (x ': xs) = x
 
-serialize :: forall columns table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns table conditions -> String
+serialize :: forall columns from table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns from table conditions -> String
 serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table ++ conditions
   where conditions = case toValues @conditions of
                        [] -> ""

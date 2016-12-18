@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+  other-modules:       Tuples
   build-depends:       base >= 4.7 && < 5
                      , type-list
   default-language:    Haskell2010
@@ -32,6 +33,7 @@ library
                      , ScopedTypeVariables
                      , AllowAmbiguousTypes
                      , TypeApplications
+                     , FunctionalDependencies
 
 executable sql-exe
   hs-source-dirs:      app
@@ -47,7 +49,7 @@ test-suite sql-test
   main-is:             Spec.hs
   build-depends:       base
                      , sql
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
 
 source-repository head
