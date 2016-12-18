@@ -26,10 +26,10 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> FROM
        -> table
        -> SELECT columns FROM table ()
-select columns from table = SELECT columns from table ()
+select columns from' table = SELECT columns from' table ()
 
 where' :: forall columns from table conditions e es. AppendToTuple es e conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
-where' condition (SELECT columns from table conditions) = SELECT columns from table (appendToTuple conditions condition)
+where' condition (SELECT columns from' table conditions) = SELECT columns from' table (appendToTuple conditions condition)
 
 data Equals = Equals
 newtype Condition a = Condition a
@@ -40,8 +40,6 @@ type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
   IsElementOf x (x ': xs) = 'True
   IsElementOf x (y ': ys) = IsElementOf x ys
-
-type TuplePrepend x xs = FromList (ListPrepend x (ToList xs))
 
 -- TODO: Use HList.
 type family ToList tuple where
@@ -90,7 +88,7 @@ type family Head x where
   Head (x ': xs) = x
 
 serialize :: forall columns from table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns from table conditions -> String
-serialize (SELECT columns from table conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue table ++ conditions'
+serialize (SELECT columns _ table conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue table ++ conditions'
   where conditions' = case toValues conditions of
                        [] -> ""
                        xs -> " WHERE " ++ intercalate " && " xs
