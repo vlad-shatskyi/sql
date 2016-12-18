@@ -21,7 +21,7 @@ type family NormalizeColumnsList table columnsList where
   NormalizeColumnsList table columnsList = ReplaceInList columnsList Star (GetTableColumns table)
 
 type family ValidateSelect s where
-  ValidateSelect (SELECT columns FROM table ()) = Difference (GetColumnsToSelect table columns) (GetTableColumns table) ~ '[]
+  ValidateSelect (SELECT columns FROM table ()) = Difference (GetTableColumns table) (GetColumnsToSelect table columns) ~ '[]
 
 data SELECT columns from table conditions = SELECT columns from table conditions
 data Star = Star
