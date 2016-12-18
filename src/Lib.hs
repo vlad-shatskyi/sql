@@ -14,8 +14,11 @@ class ToValues a where
 class ToValue a where
   toValue :: a -> String
 
+type family GetColumnsToSelect table columns where
+  GetColumnsToSelect table columns = ToList columns
+
 type family ValidateSelect s where
-  ValidateSelect (SELECT columns FROM table ()) = Difference (ToList columns) (GetColumns table) ~ '[]
+  ValidateSelect (SELECT columns FROM table ()) = Difference (GetColumnsToSelect table columns) (GetTableColumns table) ~ '[]
 
 data SELECT columns from table conditions = SELECT columns from table conditions
 data FROM = FROM
@@ -127,9 +130,9 @@ instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, 
 -- SCHEMA
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
-type family GetColumns table where
-  GetColumns Users = '[Name, Age]
-  GetColumns Comments = '[Author]
+type family GetTableColumns table where
+  GetTableColumns Users = '[Name, Age]
+  GetTableColumns Comments = '[Author]
 
 type family GetColumnType column where
   GetColumnType Name = String
