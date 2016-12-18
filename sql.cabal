@@ -34,6 +34,7 @@ library
                      , AllowAmbiguousTypes
                      , TypeApplications
                      , FunctionalDependencies
+                     , UndecidableInstances
 
 executable sql-exe
   hs-source-dirs:      app

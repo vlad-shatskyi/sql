@@ -14,14 +14,15 @@ class ToValues a where
 class ToValue a where
   toValue :: a -> String
 
-type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
+type family ValidateSelect s where
+  ValidateSelect (SELECT columns FROM table ()) = Difference (ToList columns) (GetColumns table) ~ '[]
 
 data SELECT columns from table conditions = SELECT columns from table conditions
 data FROM = FROM
 from :: FROM
 from = FROM
 
-select :: AllColumnsExist (ToList columns) (GetColumns table)
+select :: ValidateSelect (SELECT columns FROM table ())
        => columns
        -> FROM
        -> table
