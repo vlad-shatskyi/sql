@@ -5,22 +5,14 @@ module Lib
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
-import Tuples (OneTuple, ConsTuple, consTuple)
+import Tuples (OneTuple(OneTuple), ConsTuple, consTuple)
 
 -- LIBRARY.
 ------------------------------------------------------------------------------------------------------------------------
 class ToValues a where
-  toValues :: [String]
-
-instance ToValues () where
-  toValues = []
-
-instance (ToValue v1) => ToValues (OneTuple v1) where
-  toValues = [toValue @v1]
-instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
-  toValues = [toValue @v1, toValue @v2]
-instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
-  toValues = [toValue @v1, toValue @v2, toValue @v3]
+  toValues :: a -> [String]
+class ToValue a where
+  toValue :: a -> String
 
 type AllColumnsExist (passed :: [t]) (onTable :: [t]) = Difference onTable passed ~ '[]
 
@@ -40,9 +32,9 @@ where' :: forall columns from table conditions e es. ConsTuple e es conditions =
 where' condition (SELECT columns from table conditions) = SELECT columns from table (consTuple condition conditions)
 
 data Equals = Equals
-data Condition a = Condition a
+newtype Condition a = Condition a
 
-eq column value = Condition (Equals, column, value)
+eq column (value :: Integer) = Condition (Equals, column, value)
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
@@ -98,8 +90,8 @@ type family Head x where
   Head (x ': xs) = x
 
 serialize :: forall columns from table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns from table conditions -> String
-serialize _ = "SELECT " ++ intercalate ", " (toValues @columns) ++ " FROM " ++ toValue @table ++ conditions
-  where conditions = case toValues @conditions of
+serialize (SELECT columns from table conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue table ++ conditions'
+  where conditions' = case toValues conditions of
                        [] -> ""
                        xs -> " WHERE " ++ intercalate " && " xs
 ------------------------------------------------------------------------------------------------------------------------
@@ -123,25 +115,33 @@ data Author = Author deriving Show
 
 -- boilerplate
 -- TODO: Generate via TH or find a way to derive from `data` somehow.
-class ToValue a where
-  toValue :: String
 
+instance ToValues () where
+  toValues _ = []
+
+instance (ToValue v1) => ToValues (OneTuple v1) where
+  toValues (OneTuple v1) = [toValue v1]
+instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
+  toValues (v1, v2) = [toValue v1, toValue v2]
+instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
+  toValues (v1, v2, v3) = [toValue v1, toValue v2, toValue v3]
 instance ToValue Users where
-  toValue = "users"
-
+  toValue _ = "users"
 instance ToValue Name where
-  toValue = "name"
-
+  toValue _ = "name"
 instance ToValue Email where
-  toValue = "email"
-
+  toValue _ = "email"
 instance ToValue Author where
-  toValue = "author"
+  toValue _ = "author"
+instance ToValue String where
+  toValue s = "'" ++ s ++ "'"
+instance ToValue Integer where
+  toValue = show
 
 -- TODO: figure out how to have a type level integer here.
 -- TODO: generalize.
-instance ToValue column => ToValue (Condition (Equals, column, number)) where
-  toValue = toValue @column ++ " = " ++ "12"
+instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, value)) where
+  toValue (Condition (Equals, column, value)) = toValue column ++ " = " ++ toValue value
 
 
 -- SCHEMA
@@ -156,7 +156,7 @@ selects =
   [ -- select (Name, Email) from Users -- should compile.
 --   , select (Name, Author) from Users -- should not compile because there is no Author in Users.
 --   , (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
-    select (Name, Email) from Users & where' (Name `eq` 12) & where' (Email `eq` 12)-- should compile.
+    select (Name, Email) from Users & where' (Name `eq` 42) & where' (Email `eq` 12)-- should compile.
   ]
 
 
