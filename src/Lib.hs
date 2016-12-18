@@ -5,7 +5,7 @@ module Lib
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
-import Tuples (OneTuple(OneTuple), ConsTuple, consTuple)
+import Tuples (OneTuple(OneTuple), AppendToTuple, appendToTuple)
 
 -- LIBRARY.
 ------------------------------------------------------------------------------------------------------------------------
@@ -28,8 +28,8 @@ select :: AllColumnsExist (ToList columns) (GetColumns table)
        -> SELECT columns FROM table ()
 select columns from table = SELECT columns from table ()
 
-where' :: forall columns from table conditions e es. ConsTuple e es conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
-where' condition (SELECT columns from table conditions) = SELECT columns from table (consTuple condition conditions)
+where' :: forall columns from table conditions e es. AppendToTuple es e conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
+where' condition (SELECT columns from table conditions) = SELECT columns from table (appendToTuple conditions condition)
 
 data Equals = Equals
 newtype Condition a = Condition a
