@@ -39,11 +39,10 @@ select columns from table = SELECT columns from table ()
 where' :: forall columns from table conditions e es. ConsTuple e es conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
 where' condition (SELECT columns from table conditions) = SELECT columns from table (consTuple condition conditions)
 
-data Equals
-data Condition a = Condition
+data Equals = Equals
+data Condition a = Condition a
 
-eq :: (Int ~ value) => column -> value -> Condition (Equals, column, value)
-eq _ _ = Condition
+eq column value = Condition (Equals, column, value)
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
