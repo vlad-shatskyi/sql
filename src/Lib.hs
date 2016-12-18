@@ -15,12 +15,16 @@ class ToValue a where
   toValue :: a -> String
 
 type family GetColumnsToSelect table columns where
-  GetColumnsToSelect table columns = ToList columns
+  GetColumnsToSelect table columns = NormalizeColumnsList table (ToList columns)
+
+type family NormalizeColumnsList table columnsList where
+  NormalizeColumnsList table columnsList = ReplaceInList columnsList Star (GetTableColumns table)
 
 type family ValidateSelect s where
   ValidateSelect (SELECT columns FROM table ()) = Difference (GetColumnsToSelect table columns) (GetTableColumns table) ~ '[]
 
 data SELECT columns from table conditions = SELECT columns from table conditions
+data Star = Star
 data FROM = FROM
 from :: FROM
 from = FROM
@@ -41,10 +45,38 @@ newtype Condition a = Condition a
 eq :: (GetColumnType column ~ columnType) => column -> columnType -> Condition (Equals, column, columnType)
 eq column value = Condition (Equals, column, value)
 
+-- LIST FUNCTIONS
+------------------------------------------------------------------------------------------------------------------------
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
   IsElementOf x (x ': xs) = 'True
   IsElementOf x (y ': ys) = IsElementOf x ys
+
+type family AppendLists (xs :: [k]) (ys :: [k]) where
+  AppendLists '[] ys = ys
+  AppendLists (x ': xs) ys = x ': (AppendLists xs ys)
+
+type family ToListOfLists (xs :: [k]) where
+  ToListOfLists xs = ToListOfListsHelper '[] xs
+
+type family FromListOfLists (xss :: [[k]]) where
+  FromListOfLists xss = FromListOfListsHelper '[] xss
+
+type family FromListOfListsHelper (acc :: [k]) (xss :: [[k]]) where
+  FromListOfListsHelper acc '[] = acc
+  FromListOfListsHelper acc (xs ': xss) = FromListOfListsHelper (AppendLists acc xs) xss
+
+type family ToListOfListsHelper (acc :: [[k]]) (xs :: [k]) where
+  ToListOfListsHelper acc '[] = acc
+  ToListOfListsHelper acc (x ': xs) = ToListOfListsHelper ('[x] ': acc) xs
+
+type family ReplaceInList (xs :: [k]) (x :: k) (replacements :: [k]) where
+  ReplaceInList xs x replacements = FromListOfLists (ReplaceInListHelper '[] (ToListOfLists xs) x replacements)
+
+type family ReplaceInListHelper (acc :: [[k]]) (xss :: [[k]]) (x :: k) (replacements :: [k]) where
+  ReplaceInListHelper acc '[] _ _ = acc
+  ReplaceInListHelper acc ('[x] ': xss) x replacements = ReplaceInListHelper (replacements ': acc) xss x replacements
+  ReplaceInListHelper acc (xs ': xss) x replacements = ReplaceInListHelper (xs ': acc) xss x replacements
 
 -- TODO: Use HList.
 type family ToList tuple where
@@ -109,6 +141,8 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues (v1, v2) = [toValue v1, toValue v2]
 instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
   toValues (v1, v2, v3) = [toValue v1, toValue v2, toValue v3]
+instance ToValue Star where
+  toValue _ = "*"
 instance ToValue Users where
   toValue _ = "users"
 instance ToValue Name where
