@@ -35,7 +35,8 @@ where' condition (SELECT columns from' table conditions) = SELECT columns from' 
 data Equals = Equals
 newtype Condition a = Condition a
 
-eq column (value :: Integer) = Condition (Equals, column, value)
+eq :: (GetColumnType column ~ columnType) => column -> columnType -> Condition (Equals, column, columnType)
+eq column value = Condition (Equals, column, value)
 
 type family IsElementOf (x :: k) (xs :: [k]) where
   IsElementOf x '[] = 'False
@@ -118,7 +119,6 @@ instance ToValue String where
 instance ToValue Integer where
   toValue = show
 
--- TODO: figure out how to have a type level integer here.
 -- TODO: generalize.
 instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, value)) where
   toValue (Condition (Equals, column, value)) = toValue column ++ " = " ++ toValue value
@@ -131,11 +131,15 @@ type family GetColumns table where
   GetColumns Users = '[Name, Email]
   GetColumns Comments = '[Author]
 
+type family GetColumnType column where
+  GetColumnType Name = String
+  GetColumnType Email = String
+
 
 -- s = select (Name, Email) from Users -- should compile.
 -- s = select (Name, Author) from Users -- should not compile because there is no Author in Users.
 -- s = (select (Name, Email) (select (Name) from Users)) -- should not compile because there is no Email in the inner select.
-s =  select (Name, Email) from Users & where' (Name `eq` 42) & where' (Email `eq` 12)-- should compile.
+s =  select (Name, Email) from Users & where' (Name `eq` "john") & where' (Email `eq` "john@mecom")-- should compile.
 
 
 someFunc :: IO ()
