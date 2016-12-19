@@ -29,8 +29,15 @@ type family ExtraColumnsError extraColumns allColumns where
   ExtraColumnsError '[extraColumn] allColumns = TypeError ('Text "Column "  ':<>: 'ShowType extraColumn  ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
   ExtraColumnsError extraColumns   allColumns = TypeError ('Text "Columns " ':<>: 'ShowType extraColumns ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
 
+type family ValidateSelectListType selectList where
+  ValidateSelectListType [x] = TypeError ('Text "Please use tuples instead of a list to specify the columns to select.")
+  ValidateSelectListType other = 'True ~ 'True
+
 type family ValidateSelect s where
-  ValidateSelect (SELECT selectList FROM tableReference ()) = ExtraColumnsError (Difference (GetAllColumns tableReference) (GetSelectList tableReference selectList)) (GetAllColumns tableReference)
+  ValidateSelect (SELECT selectList FROM tableReference ()) =
+    ( ValidateSelectListType selectList
+    , ExtraColumnsError (Difference (GetAllColumns tableReference) (GetSelectList tableReference selectList)) (GetAllColumns tableReference)
+    )
 
 data SELECT selectList from tableReference conditions = SELECT selectList from tableReference conditions
 data Asterisk = Asterisk
