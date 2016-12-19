@@ -6,7 +6,7 @@ import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
 import Data.Kind (Type)
-import Tuples (OneTuple(OneTuple), AppendToTuple, appendToTuple)
+import Tuples
 import GHC.TypeLits
 
 -- LIBRARY.
@@ -86,27 +86,6 @@ type family ReplaceInListHelper (acc :: [[k]]) (xss :: [[k]]) (x :: k) (replacem
   ReplaceInListHelper acc '[] _ _ = acc
   ReplaceInListHelper acc ('[x] ': xss) x replacements = ReplaceInListHelper (replacements ': acc) xss x replacements
   ReplaceInListHelper acc (xs ': xss) x replacements = ReplaceInListHelper (xs ': acc) xss x replacements
-
--- TODO: Use HList.
-type family ToList tuple where
-  ToList () = '[]
-  ToList (OneTuple v1) = '[v1]
-  ToList (v1, v2) = '[v1, v2]
-  ToList (v1, v2, v3) = '[v1, v2, v3]
-  ToList (v1, v2, v3, v4) = '[v1, v2, v3, v4]
-  ToList (v1, v2, v3, v4, v5) = '[v1, v2, v3, v4, v5]
-  ToList (v1, v2, v3, v4, v5, v6) = '[v1, v2, v3, v4, v5, v6]
-  ToList (v1, v2, v3, v4, v5, v6, v7) = '[v1, v2, v3, v4, v5, v6, v7]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8) = '[v1, v2, v3, v4, v5, v6, v7, v8]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15]
-  ToList (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) = '[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16]
-  ToList v = '[v]
 
 type family ListPrepend x xs where
   ListPrepend x xs = x ': xs
