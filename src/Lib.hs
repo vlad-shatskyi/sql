@@ -22,13 +22,10 @@ type family GetSelectList tableReference selectList where
 type family NormalizeColumnsList tableReference (selectList :: [Type]) where
   NormalizeColumnsList tableReference selectList = ReplaceInList selectList Asterisk (GetAllColumns tableReference)
 
-
-data NoColumnsIn a b = NoColumnsIn a b
-
 type family ExtraColumnsError extraColumns allColumns where
   ExtraColumnsError '[] _ = 'True ~ 'True
-  ExtraColumnsError '[extraColumn] allColumns = TypeError (Text "Column "  :<>: ShowType extraColumn  :<>: Text " not found" :$$: Text "Available columns: " :<>: ShowType allColumns)
-  ExtraColumnsError extraColumns   allColumns = TypeError (Text "Columns " :<>: ShowType extraColumns :<>: Text " not found" :$$: Text "Available columns: " :<>: ShowType allColumns)
+  ExtraColumnsError '[extraColumn] allColumns = TypeError ('Text "Column "  ':<>: 'ShowType extraColumn  ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
+  ExtraColumnsError extraColumns   allColumns = TypeError ('Text "Columns " ':<>: 'ShowType extraColumns ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
 
 type family ValidateSelect s where
   ValidateSelect (SELECT selectList FROM tableReference ()) = ExtraColumnsError (Difference (GetAllColumns tableReference) (GetSelectList tableReference selectList)) (GetAllColumns tableReference)
