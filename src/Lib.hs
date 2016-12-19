@@ -136,6 +136,8 @@ data Author = Author deriving Show
 instance ToValues () where
   toValues _ = []
 
+instance ToValue v1 => ToValues v1 where
+  toValues v1 = [toValue v1]
 instance (ToValue v1) => ToValues (OneTuple v1) where
   toValues (OneTuple v1) = [toValue v1]
 instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where

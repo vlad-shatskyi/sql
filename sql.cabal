@@ -35,6 +35,7 @@ library
                      , TypeApplications
                      , FunctionalDependencies
                      , UndecidableInstances
+                     , OverlappingInstances
 
 executable sql-exe
   hs-source-dirs:      app
