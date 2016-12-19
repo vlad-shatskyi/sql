@@ -26,6 +26,8 @@ type family ValidateSelect s where
 
 data SELECT selectList from tableReference conditions = SELECT selectList from tableReference conditions
 data Asterisk = Asterisk
+everything :: Asterisk
+everything = Asterisk
 data FROM = FROM
 from :: FROM
 from = FROM
@@ -136,7 +138,7 @@ data Author = Author deriving Show
 instance ToValues () where
   toValues _ = []
 
-instance ToValue v1 => ToValues v1 where
+instance {-# OVERLAPPABLE #-} ToValue v1 => ToValues v1 where
   toValues v1 = [toValue v1]
 instance (ToValue v1) => ToValues (OneTuple v1) where
   toValues (OneTuple v1) = [toValue v1]
@@ -184,7 +186,7 @@ type family GetColumnType column where
 -- s = (select (Name, Age) from (select (Name) from Users)) -- should not compile because there is no Age in the inner select.
 -- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` "18")-- should not compile because integer column Age is compared with a string.
 -- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
-s = select (Name, Age) from (select (Name, Age) from Users & where' (Name `eq` "peter")) -- should compile.
+s = select Age from (select everything from Users) -- should compile.
 
 
 someFunc :: IO ()
