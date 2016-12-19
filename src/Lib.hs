@@ -4,12 +4,12 @@ module Lib
 
 import Lists
 import Tuples
+import Validations
 
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
 import Data.Kind (Type)
-import GHC.TypeLits
 
 -- LIBRARY.
 ------------------------------------------------------------------------------------------------------------------------
@@ -23,15 +23,6 @@ type family GetSelectList tableReference selectList where
 
 type family NormalizeSelectList tableReference (selectList :: [Type]) where
   NormalizeSelectList tableReference selectList = ReplaceInList selectList Asterisk (GetAllColumns tableReference)
-
-type family ExtraColumnsError extraColumns allColumns where
-  ExtraColumnsError '[] _ = 'True ~ 'True
-  ExtraColumnsError '[extraColumn] allColumns = TypeError ('Text "Column "  ':<>: 'ShowType extraColumn  ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
-  ExtraColumnsError extraColumns   allColumns = TypeError ('Text "Columns " ':<>: 'ShowType extraColumns ':<>: 'Text " not found" ':$$: 'Text "Available columns: " ':<>: 'ShowType allColumns)
-
-type family ValidateSelectListType selectList where
-  ValidateSelectListType [x] = TypeError ('Text "Please use tuples instead of a list to specify the columns to select.")
-  ValidateSelectListType other = 'True ~ 'True
 
 type family ValidateSelect s where
   ValidateSelect (SELECT selectList FROM tableReference ()) =
