@@ -5,6 +5,7 @@ module Lib
 import Data.List (intercalate)
 import Data.Function ((&))
 import Data.Type.List (Difference)
+import Data.Kind (Type)
 import Tuples (OneTuple(OneTuple), AppendToTuple, appendToTuple)
 
 -- LIBRARY.
@@ -14,30 +15,30 @@ class ToValues a where
 class ToValue a where
   toValue :: a -> String
 
-type family GetColumnsToSelect tableReference columns where
-  GetColumnsToSelect tableReference columns = NormalizeColumnsList tableReference (ToList columns)
+type family GetSelectList tableReference selectList where
+  GetSelectList tableReference selectList = NormalizeColumnsList tableReference (ToList selectList)
 
-type family NormalizeColumnsList tableReference columnsList where
-  NormalizeColumnsList tableReference columnsList = ReplaceInList columnsList Star (GetTableColumns tableReference)
+type family NormalizeColumnsList tableReference (selectList :: [Type]) where
+  NormalizeColumnsList tableReference selectList = ReplaceInList selectList Asterisk (GetAllColumns tableReference)
 
 type family ValidateSelect s where
-  ValidateSelect (SELECT columns FROM tableReference ()) = Difference (GetTableColumns tableReference) (GetColumnsToSelect tableReference columns) ~ '[]
+  ValidateSelect (SELECT selectList FROM tableReference ()) = Difference (GetAllColumns tableReference) (GetSelectList tableReference selectList) ~ '[]
 
-data SELECT columns from tableReference conditions = SELECT columns from tableReference conditions
-data Star = Star
+data SELECT selectList from tableReference conditions = SELECT selectList from tableReference conditions
+data Asterisk = Asterisk
 data FROM = FROM
 from :: FROM
 from = FROM
 
-select :: ValidateSelect (SELECT columns FROM tableReference ())
-       => columns
+select :: ValidateSelect (SELECT selectList FROM tableReference ())
+       => selectList
        -> FROM
        -> tableReference
-       -> SELECT columns FROM tableReference ()
-select columns from' tableReference = SELECT columns from' tableReference ()
+       -> SELECT selectList FROM tableReference ()
+select selectList from' tableReference = SELECT selectList from' tableReference ()
 
-where' :: forall columns from tableReference conditions e es. AppendToTuple es e conditions => e -> SELECT columns from tableReference es -> SELECT columns from tableReference conditions
-where' condition (SELECT columns from' tableReference conditions) = SELECT columns from' tableReference (appendToTuple conditions condition)
+where' :: forall selectList from tableReference conditions e es. AppendToTuple es e conditions => e -> SELECT selectList from tableReference es -> SELECT selectList from tableReference conditions
+where' condition (SELECT selectList from' tableReference conditions) = SELECT selectList from' tableReference (appendToTuple conditions condition)
 
 data Equals = Equals
 newtype Condition a = Condition a
@@ -105,8 +106,8 @@ type family ListPrepend x xs where
 type family Head x where
   Head (x ': xs) = x
 
-serialize :: forall columns from tableReference conditions. (ToValues columns, ToValue tableReference, ToValues conditions) => SELECT columns from tableReference conditions -> String
-serialize (SELECT columns _ tableReference conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue tableReference ++ conditions'
+serialize :: forall selectList from tableReference conditions. (ToValues selectList, ToValue tableReference, ToValues conditions) => SELECT selectList from tableReference conditions -> String
+serialize (SELECT selectList _ tableReference conditions) = "SELECT " ++ intercalate ", " (toValues selectList) ++ " FROM " ++ toValue tableReference ++ conditions'
   where conditions' = case toValues conditions of
                        [] -> ""
                        xs -> " WHERE " ++ intercalate " && " xs
@@ -141,7 +142,7 @@ instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
   toValues (v1, v2) = [toValue v1, toValue v2]
 instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
   toValues (v1, v2, v3) = [toValue v1, toValue v2, toValue v3]
-instance ToValue Star where
+instance ToValue Asterisk where
   toValue _ = "*"
 instance ToValue Users where
   toValue _ = "users"
@@ -155,6 +156,8 @@ instance ToValue String where
   toValue x = "'" ++ x ++ "'"
 instance ToValue Integer where
   toValue = show
+instance (ToValues selectList, ToValue tableReference, ToValues conditions) => ToValue (SELECT selectList FROM tableReference conditions) where
+  toValue select = "(" ++ serialize select ++ ")"
 
 -- TODO: generalize.
 instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, value)) where
@@ -164,9 +167,10 @@ instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, 
 -- SCHEMA
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
-type family GetTableColumns tableReference where
-  GetTableColumns Users = '[Name, Age]
-  GetTableColumns Comments = '[Author]
+type family GetAllColumns tableReference where
+  GetAllColumns Users = '[Name, Age]
+  GetAllColumns Comments = '[Author]
+  GetAllColumns (SELECT selectList FROM tableReference conditions) = GetSelectList tableReference selectList
 
 type family GetColumnType column where
   GetColumnType Name = String
@@ -175,9 +179,10 @@ type family GetColumnType column where
 
 -- s = select (Name, Age) from Users -- should compile.
 -- s = select (Name, Author) from Users -- should not compile because there is no Author in Users.
--- s = (select (Name, Age) (select (Name) from Users)) -- should not compile because there is no Age in the inner select.
+-- s = (select (Name, Age) from (select (Name) from Users)) -- should not compile because there is no Age in the inner select.
 -- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` "18")-- should not compile because integer column Age is compared with a string.
-s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
+-- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
+s = select (Name, Age) from (select (Name, Age) from Users & where' (Name `eq` "peter")) -- should compile.
 
 
 someFunc :: IO ()
