@@ -13,16 +13,16 @@ import GHC.TypeLits
 
 -- LIBRARY.
 ------------------------------------------------------------------------------------------------------------------------
-class ToValues a where
-  toValues :: a -> [String]
-class ToValue a where
-  toValue :: a -> String
+class ToSQLStringList a where
+  toSQLStringList :: a -> [String]
+class ToSQLString a where
+  toSQLString :: a -> String
 
 type family GetSelectList tableReference selectList where
-  GetSelectList tableReference selectList = NormalizeColumnsList tableReference (ToList selectList)
+  GetSelectList tableReference selectList = NormalizeSelectList tableReference (ToList selectList)
 
-type family NormalizeColumnsList tableReference (selectList :: [Type]) where
-  NormalizeColumnsList tableReference selectList = ReplaceInList selectList Asterisk (GetAllColumns tableReference)
+type family NormalizeSelectList tableReference (selectList :: [Type]) where
+  NormalizeSelectList tableReference selectList = ReplaceInList selectList Asterisk (GetAllColumns tableReference)
 
 type family ExtraColumnsError extraColumns allColumns where
   ExtraColumnsError '[] _ = 'True ~ 'True
@@ -50,15 +50,15 @@ select selectList from' tableReference = SELECT selectList from' tableReference 
 where' :: forall selectList from tableReference conditions e es. AppendToTuple es e conditions => e -> SELECT selectList from tableReference es -> SELECT selectList from tableReference conditions
 where' condition (SELECT selectList from' tableReference conditions) = SELECT selectList from' tableReference (appendToTuple conditions condition)
 
-data Equals = Equals
 newtype Condition a = Condition a
+data Equals = Equals
 
 eq :: (GetColumnType column ~ columnType) => column -> columnType -> Condition (Equals, column, columnType)
 eq column value = Condition (Equals, column, value)
 
-serialize :: forall selectList from tableReference conditions. (ToValues selectList, ToValue tableReference, ToValues conditions) => SELECT selectList from tableReference conditions -> String
-serialize (SELECT selectList _ tableReference conditions) = "SELECT " ++ intercalate ", " (toValues selectList) ++ " FROM " ++ toValue tableReference ++ conditions'
-  where conditions' = case toValues conditions of
+serialize :: forall selectList from tableReference conditions. (ToSQLStringList selectList, ToSQLString tableReference, ToSQLStringList conditions) => SELECT selectList from tableReference conditions -> String
+serialize (SELECT selectList _ tableReference conditions) = "SELECT " ++ intercalate ", " (toSQLStringList selectList) ++ " FROM " ++ toSQLString tableReference ++ conditions'
+  where conditions' = case toSQLStringList conditions of
                        [] -> ""
                        xs -> " WHERE " ++ intercalate " && " xs
 ------------------------------------------------------------------------------------------------------------------------
@@ -82,38 +82,38 @@ data Author = Author deriving Show
 
 -- boilerplate
 -- TODO: Generate via TH or find a way to derive from `data` somehow.
+instance ToSQLStringList () where
+  toSQLStringList _ = []
+instance {-# OVERLAPPABLE #-} ToSQLString v1 => ToSQLStringList v1 where
+  toSQLStringList v1 = [toSQLString v1]
+instance (ToSQLString v1) => ToSQLStringList (OneTuple v1) where
+  toSQLStringList (OneTuple v1) = [toSQLString v1]
+instance (ToSQLString v1, ToSQLString v2) => ToSQLStringList (v1, v2) where
+  toSQLStringList (v1, v2) = [toSQLString v1, toSQLString v2]
+instance (ToSQLString v1, ToSQLString v2, ToSQLString v3) => ToSQLStringList (v1, v2, v3) where
+  toSQLStringList (v1, v2, v3) = [toSQLString v1, toSQLString v2, toSQLString v3]
 
-instance ToValues () where
-  toValues _ = []
 
-instance {-# OVERLAPPABLE #-} ToValue v1 => ToValues v1 where
-  toValues v1 = [toValue v1]
-instance (ToValue v1) => ToValues (OneTuple v1) where
-  toValues (OneTuple v1) = [toValue v1]
-instance (ToValue v1, ToValue v2) => ToValues (v1, v2) where
-  toValues (v1, v2) = [toValue v1, toValue v2]
-instance (ToValue v1, ToValue v2, ToValue v3) => ToValues (v1, v2, v3) where
-  toValues (v1, v2, v3) = [toValue v1, toValue v2, toValue v3]
-instance ToValue Asterisk where
-  toValue _ = "*"
-instance ToValue Users where
-  toValue _ = "users"
-instance ToValue Name where
-  toValue _ = "name"
-instance ToValue Age where
-  toValue _ = "email"
-instance ToValue Author where
-  toValue _ = "author"
-instance ToValue String where
-  toValue x = "'" ++ x ++ "'"
-instance ToValue Integer where
-  toValue = show
-instance (ToValues selectList, ToValue tableReference, ToValues conditions) => ToValue (SELECT selectList FROM tableReference conditions) where
-  toValue select = "(" ++ serialize select ++ ")"
+instance ToSQLString Asterisk where
+  toSQLString _ = "*"
+instance ToSQLString Users where
+  toSQLString _ = "users"
+instance ToSQLString Name where
+  toSQLString _ = "name"
+instance ToSQLString Age where
+  toSQLString _ = "email"
+instance ToSQLString Author where
+  toSQLString _ = "author"
+instance ToSQLString String where
+  toSQLString x = "'" ++ x ++ "'"
+instance ToSQLString Integer where
+  toSQLString = show
+instance (ToSQLStringList selectList, ToSQLString tableReference, ToSQLStringList conditions) => ToSQLString (SELECT selectList FROM tableReference conditions) where
+  toSQLString select' = "(" ++ serialize select' ++ ")"
 
 -- TODO: generalize.
-instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, value)) where
-  toValue (Condition (Equals, column, value)) = toValue column ++ " = " ++ toValue value
+instance (ToSQLString column, ToSQLString value) => ToSQLString (Condition (Equals, column, value)) where
+  toSQLString (Condition (Equals, column, value)) = toSQLString column ++ " = " ++ toSQLString value
 
 
 -- SCHEMA
