@@ -183,9 +183,9 @@ type family GetColumnType column where
 
 -- s = select (Name, Age) from Users -- should compile.
 -- s = select (Name, Author) from Users -- should not compile because there is no Author in Users.
--- s = (select (Name, Age) from (select (Name) from Users)) -- should not compile because there is no Age in the inner select.
--- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` "18")-- should not compile because integer column Age is compared with a string.
--- s =  select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
+-- s = select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` "18")-- should not compile because integer column Age is compared with a string.
+-- s = select (Name, Age) from Users & where' (Name `eq` "john") & where' (Age `eq` 18)-- should compile.
+-- s = select Age from (select Name from Users) -- should not compile because there is no Age in the inner select.
 s = select Age from (select everything from Users) -- should compile.
 
 
