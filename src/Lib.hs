@@ -14,30 +14,30 @@ class ToValues a where
 class ToValue a where
   toValue :: a -> String
 
-type family GetColumnsToSelect table columns where
-  GetColumnsToSelect table columns = NormalizeColumnsList table (ToList columns)
+type family GetColumnsToSelect tableReference columns where
+  GetColumnsToSelect tableReference columns = NormalizeColumnsList tableReference (ToList columns)
 
-type family NormalizeColumnsList table columnsList where
-  NormalizeColumnsList table columnsList = ReplaceInList columnsList Star (GetTableColumns table)
+type family NormalizeColumnsList tableReference columnsList where
+  NormalizeColumnsList tableReference columnsList = ReplaceInList columnsList Star (GetTableColumns tableReference)
 
 type family ValidateSelect s where
-  ValidateSelect (SELECT columns FROM table ()) = Difference (GetTableColumns table) (GetColumnsToSelect table columns) ~ '[]
+  ValidateSelect (SELECT columns FROM tableReference ()) = Difference (GetTableColumns tableReference) (GetColumnsToSelect tableReference columns) ~ '[]
 
-data SELECT columns from table conditions = SELECT columns from table conditions
+data SELECT columns from tableReference conditions = SELECT columns from tableReference conditions
 data Star = Star
 data FROM = FROM
 from :: FROM
 from = FROM
 
-select :: ValidateSelect (SELECT columns FROM table ())
+select :: ValidateSelect (SELECT columns FROM tableReference ())
        => columns
        -> FROM
-       -> table
-       -> SELECT columns FROM table ()
-select columns from' table = SELECT columns from' table ()
+       -> tableReference
+       -> SELECT columns FROM tableReference ()
+select columns from' tableReference = SELECT columns from' tableReference ()
 
-where' :: forall columns from table conditions e es. AppendToTuple es e conditions => e -> SELECT columns from table es -> SELECT columns from table conditions
-where' condition (SELECT columns from' table conditions) = SELECT columns from' table (appendToTuple conditions condition)
+where' :: forall columns from tableReference conditions e es. AppendToTuple es e conditions => e -> SELECT columns from tableReference es -> SELECT columns from tableReference conditions
+where' condition (SELECT columns from' tableReference conditions) = SELECT columns from' tableReference (appendToTuple conditions condition)
 
 data Equals = Equals
 newtype Condition a = Condition a
@@ -105,8 +105,8 @@ type family ListPrepend x xs where
 type family Head x where
   Head (x ': xs) = x
 
-serialize :: forall columns from table conditions. (ToValues columns, ToValue table, ToValues conditions) => SELECT columns from table conditions -> String
-serialize (SELECT columns _ table conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue table ++ conditions'
+serialize :: forall columns from tableReference conditions. (ToValues columns, ToValue tableReference, ToValues conditions) => SELECT columns from tableReference conditions -> String
+serialize (SELECT columns _ tableReference conditions) = "SELECT " ++ intercalate ", " (toValues columns) ++ " FROM " ++ toValue tableReference ++ conditions'
   where conditions' = case toValues conditions of
                        [] -> ""
                        xs -> " WHERE " ++ intercalate " && " xs
@@ -152,7 +152,7 @@ instance ToValue Age where
 instance ToValue Author where
   toValue _ = "author"
 instance ToValue String where
-  toValue s = "'" ++ s ++ "'"
+  toValue x = "'" ++ x ++ "'"
 instance ToValue Integer where
   toValue = show
 
@@ -164,7 +164,7 @@ instance (ToValue column, ToValue value) => ToValue (Condition (Equals, column, 
 -- SCHEMA
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
-type family GetTableColumns table where
+type family GetTableColumns tableReference where
   GetTableColumns Users = '[Name, Age]
   GetTableColumns Comments = '[Author]
 
