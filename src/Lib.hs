@@ -73,6 +73,7 @@ data Comments = Comments
 -- users columns
 data Name = Name
 data Age = Age
+data Email = Email
 
 -- comments columns
 data Author = Author deriving Show
@@ -99,6 +100,8 @@ instance ToSQLString Users where
 instance ToSQLString Name where
   toSQLString _ = "name"
 instance ToSQLString Age where
+  toSQLString _ = "age"
+instance ToSQLString Email where
   toSQLString _ = "email"
 instance ToSQLString Author where
   toSQLString _ = "author"
@@ -118,7 +121,7 @@ instance (ToSQLString column, ToSQLString value) => ToSQLString (Condition (Equa
 -- currently only column names.
 ------------------------------------------------------------------------------------------------------------------------
 type family GetAllColumns tableReference where
-  GetAllColumns Users = '[Name, Age]
+  GetAllColumns Users = '[Name, Age, Email]
   GetAllColumns Comments = '[Author]
   GetAllColumns (SELECT selectList FROM tableReference conditions) = GetSelectList tableReference selectList
 
